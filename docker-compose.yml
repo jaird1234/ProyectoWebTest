@@ -43,7 +43,7 @@ services:
     environment:
       - DANGEROUSLY_DISABLE_HOST_CHECK=true
       - ALLOWED_HOSTS=all
-      - REACT_APP_GOOGLE_MAPS_API_KEY=CAMBIAR_POR_CLAVE_LOCAL
+      - REACT_APP_GOOGLE_MAPS_API_KEY=AIzaSyAAu1Cnaa1ySE_UnvUv14vl7V1D_SSIzHA
     depends_on:
       - backend
     networks:

@@ -47,12 +47,13 @@ app.post('/api/register', async (req, res) => {
 });
 
 // ── ARTÍCULOS & CATEGORÍAS ─────────────────────────────
-app.get('/api/categorias', async (req, res) => {
-  try {
-    const pool = await poolPromise;
-    const result = await pool.request().query('SELECT * FROM Categorias');
-    res.json(result.recordset);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+app.post('/api/categorias', async (req, res) => {
+  const { Nombre } = req.body;
+  const pool = await poolPromise;
+  const result = await pool.request()
+    .input('Nombre', sql.NVarChar, Nombre)
+    .query(`INSERT INTO Categorias (Nombre) OUTPUT INSERTED.Id VALUES (@Nombre)`);
+  res.json({ Id: result.recordset[0].Id });
 });
 
 app.get('/api/articulos', async (req, res) => {
@@ -154,12 +155,19 @@ app.put('/api/entregas-proveedores/:id/recibir', async (req, res) => {
 });
 
 // ── GESTIÓN DE EMPLEADOS ───────────────────────────
-app.get('/api/empleados', async (req, res) => {
-  try {
-    const pool = await poolPromise;
-    const result = await pool.request().query("SELECT Id, Usuario, NombreCompleto, Rol, Telefono FROM Usuarios WHERE Rol != 'Cliente'");
-    res.json(result.recordset);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+app.post('/api/empleados', async (req, res) => {
+  const { NombreCompleto, Usuario, Contrasena, Rol, Telefono, Correo } = req.body;
+  const pool = await poolPromise;
+  await pool.request()
+    .input('NombreCompleto', sql.NVarChar, NombreCompleto)
+    .input('Usuario',        sql.NVarChar, Usuario)
+    .input('Contrasena',     sql.NVarChar, Contrasena)
+    .input('Rol',            sql.NVarChar, Rol)
+    .input('Telefono',       sql.NVarChar, Telefono || null)
+    .input('Correo',         sql.NVarChar, Correo || null)
+    .query(`INSERT INTO Usuarios (NombreCompleto, Usuario, Contrasena, Rol, Telefono, Correo)
+            VALUES (@NombreCompleto, @Usuario, @Contrasena, @Rol, @Telefono, @Correo)`);
+  res.json({ ok: true });
 });
 
 app.put('/api/empleados/:id', async (req, res) => {
