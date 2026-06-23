@@ -2,6 +2,8 @@ const express      = require('express');
 const cors         = require('cors');
 const initDB       = require('./init-db');
 require('dotenv').config();
+const bcrypt = require('bcrypt');
+const SALT_ROUNDS = 10;
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -13,16 +15,26 @@ let sql;
 let poolPromise;
 
 // ── AUTH & REGISTRO ────────────────────────
+// LOGIN — buscar por usuario y comparar hash
 app.post('/api/login', async (req, res) => {
   const { Usuario, Password } = req.body;
   try {
     const pool = await poolPromise;
+    // Ya NO filtras por Password en el SQL, solo por Usuario
     const result = await pool.request()
       .input('Usuario', sql.NVarChar(50), Usuario)
-      .input('Password', sql.NVarChar(255), Password)
-      .query('SELECT Id, Usuario, NombreCompleto, Rol, Calle, Numero, Colonia, Municipio, CodigoPostal, Telefono FROM Usuarios WHERE Usuario=@Usuario AND Password=@Password');
-    if (!result.recordset.length) return res.status(401).json({ error: 'Credenciales incorrectas' });
-    res.json(result.recordset[0]);
+      .query('SELECT Id, Usuario, Password, NombreCompleto, Rol, Calle, Numero, Colonia, Municipio, CodigoPostal, Telefono FROM Usuarios WHERE Usuario=@Usuario');
+
+    if (!result.recordset.length)
+      return res.status(401).json({ error: 'Credenciales incorrectas' });
+
+    const user = result.recordset[0];
+    const match = await bcrypt.compare(Password, user.Password); // ← comparar
+    if (!match)
+      return res.status(401).json({ error: 'Credenciales incorrectas' });
+
+    const { Password: _, ...userData } = user; // quitar el hash de la respuesta
+    res.json(userData);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -30,9 +42,10 @@ app.post('/api/register', async (req, res) => {
   const { Usuario, Password, NombreCompleto, Calle, Numero, Colonia, Municipio, CodigoPostal, Telefono } = req.body;
   try {
     const pool = await poolPromise;
+    const hash = await bcrypt.hash(Password, SALT_ROUNDS);
     await pool.request()
       .input('Usuario', sql.NVarChar(50), Usuario)
-      .input('Password', sql.NVarChar(255), Password)
+      .input('Password', sql.NVarChar(255), hash)
       .input('NombreCompleto', sql.NVarChar(100), NombreCompleto)
       .input('Rol', sql.NVarChar(30), 'Cliente')
       .input('Calle', sql.NVarChar(100), Calle)
@@ -165,8 +178,9 @@ app.post('/api/empleados', async (req, res) => {
     .input('Rol',            sql.NVarChar, Rol)
     .input('Telefono',       sql.NVarChar, Telefono || null)
     .input('Correo',         sql.NVarChar, Correo || null)
-    .query(`INSERT INTO Usuarios (NombreCompleto, Usuario, Contrasena, Rol, Telefono, Correo)
-            VALUES (@NombreCompleto, @Usuario, @Contrasena, @Rol, @Telefono, @Correo)`);
+    
+    .query(`INSERT INTO Usuarios (NombreCompleto, Usuario, Password, Rol, Telefono, Correo)
+        VALUES (@NombreCompleto, @Usuario, @Contrasena, @Rol, @Telefono, @Correo)`)
   res.json({ ok: true });
 });
 

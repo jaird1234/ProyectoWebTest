@@ -189,9 +189,9 @@ export default function DashboardAdmin({ usuario }) {
   const inputStyle = { padding:'10px 12px', borderRadius:'8px', border:'1px solid var(--border-color)', background:'var(--bg-primary)', color:'var(--text-main)', fontSize:'0.9rem' };
   const cardSeccion = { background:'var(--bg-primary)', padding:'16px', borderRadius:'10px', marginBottom:'16px' };
 
-  // ==========================================
+ 
   // RENDER: REPARTIDOR
-  // ==========================================
+ 
   if (usuario.Rol === 'Repartidor') {
     const misPedidos = pedidos
       .filter(p => p.RepartidorId === usuario.Id || p.Estado === 'Preparado')
@@ -222,9 +222,9 @@ export default function DashboardAdmin({ usuario }) {
     );
   }
 
-  // ==========================================
+
   // RENDER: ADMIN / ALMACENISTA
-  // ==========================================
+ 
   return (
     <div className="dashboard-layout">
 
@@ -585,12 +585,12 @@ export default function DashboardAdmin({ usuario }) {
                 <div className="flex-row">
                   <div style={{ display:'flex', flexDirection:'column', gap:'4px', flex:1 }}>
                     <label style={{ fontSize:'0.78rem', color:'var(--text-muted)', fontWeight:600 }}>Nombre Completo *</label>
-                    <input placeholder="Ej: Juan García López" value={empForm.NombreCompleto}
+                    <input placeholder="" value={empForm.NombreCompleto}
                       onChange={e => setEmpForm({...empForm, NombreCompleto:e.target.value})} required style={inputStyle} />
                   </div>
                   <div style={{ display:'flex', flexDirection:'column', gap:'4px', flex:1 }}>
                     <label style={{ fontSize:'0.78rem', color:'var(--text-muted)', fontWeight:600 }}>Usuario (login) *</label>
-                    <input placeholder="Ej: juangarcia" value={empForm.Usuario}
+                    <input placeholder="" value={empForm.Usuario}
                       onChange={e => setEmpForm({...empForm, Usuario:e.target.value})}
                       required={!editandoEmpleado} style={inputStyle} />
                   </div>
@@ -601,7 +601,7 @@ export default function DashboardAdmin({ usuario }) {
                     <label style={{ fontSize:'0.78rem', color:'var(--text-muted)', fontWeight:600 }}>
                       {editandoEmpleado ? 'Nueva Contraseña (dejar vacío para no cambiar)' : 'Contraseña *'}
                     </label>
-                    <input type="password" placeholder="Contraseña" value={empForm.Contrasena}
+                    <input type="password" placeholder="" value={empForm.Contrasena}
                       onChange={e => setEmpForm({...empForm, Contrasena:e.target.value})}
                       required={!editandoEmpleado} style={inputStyle} />
                   </div>
@@ -623,7 +623,7 @@ export default function DashboardAdmin({ usuario }) {
                   </div>
                   <div style={{ display:'flex', flexDirection:'column', gap:'4px', flex:1 }}>
                     <label style={{ fontSize:'0.78rem', color:'var(--text-muted)', fontWeight:600 }}>Correo electrónico</label>
-                    <input type="email" placeholder="correo@ejemplo.com" value={empForm.Correo}
+                    <input type="email" placeholder="" value={empForm.Correo}
                       onChange={e => setEmpForm({...empForm, Correo:e.target.value})} style={inputStyle} />
                   </div>
                 </div>
