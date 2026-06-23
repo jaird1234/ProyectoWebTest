@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-
 export const RANGOS_HORARIOS = [
   "08:00 AM - 09:00 AM","09:00 AM - 10:00 AM","10:00 AM - 11:00 AM",
   "11:00 AM - 12:00 PM","12:00 PM - 01:00 PM","01:00 PM - 02:00 PM",
@@ -13,7 +12,6 @@ export const RANGOS_HORARIOS = [
 export default function DashboardAdmin({ usuario }) {
   const [activeTab, setActiveTab] = useState('pedidos');
 
-  // Datos
   const [pedidos, setPedidos]           = useState([]);
   const [articulos, setArticulos]       = useState([]);
   const [categorias, setCategorias]     = useState([]);
@@ -23,28 +21,22 @@ export default function DashboardAdmin({ usuario }) {
   const [empleados, setEmpleados]       = useState([]);
   const [ventas, setVentas]             = useState([]);
 
-  // Filtros de pedidos
   const [filtroDia, setFiltroDia]         = useState('');
   const [filtroHorario, setFiltroHorario] = useState('');
   const [filtroEstado, setFiltroEstado]   = useState('');
 
-  // Búsqueda inventario
   const [busquedaArticulo, setBusquedaArticulo] = useState('');
 
-  // Form artículo
-  const [artForm, setArtForm]           = useState({ Nombre:'', Precio:'', Stock:'', CategoriaId:'', Imagen:'', Descuento:0, Destacado:false });
+  const [artForm, setArtForm] = useState({ Nombre:'', Precio:'', Stock:'', CategoriaId:'', Imagen:'', Descuento:0, Destacado:false });
   const [editandoArticulo, setEditandoArticulo] = useState(null);
 
-  // Form nueva categoría (inline)
   const [mostrarNuevaCat, setMostrarNuevaCat] = useState(false);
   const [nuevaCatNombre, setNuevaCatNombre]   = useState('');
 
-  // Form empleado (alta + edición)
-  const [empForm, setEmpForm]           = useState({ NombreCompleto:'', Usuario:'', Contrasena:'', Rol:'Repartidor', Telefono:'', Correo:'' });
+  const [empForm, setEmpForm] = useState({ NombreCompleto:'', Usuario:'', Contrasena:'', Rol:'Repartidor', Telefono:'', Correo:'' });
   const [editandoEmpleado, setEditandoEmpleado] = useState(null);
   const [mostrarFormEmp, setMostrarFormEmp]     = useState(false);
 
-  // Form proveedores
   const [provForm, setProvForm] = useState({ Nombre:'', Contacto:'', Telefono:'' });
   const [entForm, setEntForm]   = useState({ ProveedorId:'', FechaProgramada:'', MontoAPagar:'' });
 
@@ -75,15 +67,12 @@ export default function DashboardAdmin({ usuario }) {
     } catch (err) { console.error('Error al cargar datos:', err); }
   };
 
-  // ── KPIs ventas ──
   const totalVentas       = ventas.reduce((acc, v) => acc + Number(v.Total || 0), 0);
   const pedidosEntregados = ventas.filter(v => v.Estado === 'Entregado').length;
   const pedidosPendientes = ventas.filter(v => v.Estado !== 'Entregado').length;
 
-  // ── Pedidos filtrados ──
   const pedidosFiltrados = pedidos.filter(p => {
     const horarioFull = p.HorarioEntrega || '';
-    // HorarioEntrega guarda "YYYY-MM-DD | HH:MM AM - HH:MM AM"
     const [diaParte, horaParte] = horarioFull.split(' | ');
     const coincideDia     = !filtroDia     || (diaParte || '').includes(filtroDia);
     const coincideHorario = !filtroHorario || (horaParte || '').includes(filtroHorario);
@@ -91,13 +80,11 @@ export default function DashboardAdmin({ usuario }) {
     return coincideDia && coincideHorario && coincideEstado;
   });
 
-  // ── Pedidos: cambiar estado ──
   const cambiarEstadoPedido = async (id, nuevoEstado, repId = null) => {
     await axios.put(`/api/pedidos/${id}/estado`, { Estado: nuevoEstado, RepartidorId: repId });
     fetchDatos();
   };
 
-  // ── CRUD Artículos ──
   const guardarArticulo = async (e) => {
     e.preventDefault();
     if (editandoArticulo) {
@@ -121,7 +108,6 @@ export default function DashboardAdmin({ usuario }) {
     }
   };
 
-  // ── Nueva categoría inline ──
   const crearCategoria = async (e) => {
     e.preventDefault();
     if (!nuevaCatNombre.trim()) return;
@@ -129,11 +115,9 @@ export default function DashboardAdmin({ usuario }) {
     setNuevaCatNombre('');
     setMostrarNuevaCat(false);
     await fetchDatos();
-    // Seleccionar la nueva categoría automáticamente
     if (res.data?.Id) setArtForm(f => ({ ...f, CategoriaId: res.data.Id }));
   };
 
-  // ── CRUD Empleados (alta + edición) ──
   const abrirAltaEmpleado = () => {
     setEmpForm({ NombreCompleto:'', Usuario:'', Contrasena:'', Rol:'Repartidor', Telefono:'', Correo:'' });
     setEditandoEmpleado(null);
@@ -163,7 +147,6 @@ export default function DashboardAdmin({ usuario }) {
     }
   };
 
-  // ── Proveedores ──
   const registrarProveedor = async (e) => {
     e.preventDefault();
     await axios.post('/api/proveedores', provForm);
@@ -185,13 +168,10 @@ export default function DashboardAdmin({ usuario }) {
     a.Nombre.toLowerCase().includes(busquedaArticulo.toLowerCase())
   );
 
-  // ── Estilos reutilizables ──
-  const inputStyle = { padding:'10px 12px', borderRadius:'8px', border:'1px solid var(--border-color)', background:'var(--bg-primary)', color:'var(--text-main)', fontSize:'0.9rem' };
+  const inputStyle  = { padding:'10px 12px', borderRadius:'8px', border:'1px solid var(--border-color)', background:'var(--bg-primary)', color:'var(--text-main)', fontSize:'0.9rem' };
   const cardSeccion = { background:'var(--bg-primary)', padding:'16px', borderRadius:'10px', marginBottom:'16px' };
 
- 
-  // RENDER: REPARTIDOR
- 
+  // ── RENDER: REPARTIDOR ──────────────────────────────────────
   if (usuario.Rol === 'Repartidor') {
     const misPedidos = pedidos
       .filter(p => p.RepartidorId === usuario.Id || p.Estado === 'Preparado')
@@ -211,8 +191,8 @@ export default function DashboardAdmin({ usuario }) {
                   }
                 </div>
                 <div style={{ minWidth:'150px' }}>
-                  {p.Estado === 'Preparado'  && <button className="btn" onClick={() => cambiarEstadoPedido(p.Id, 'En Camino', usuario.Id)}>Tomar Ruta</button>}
-                  {p.Estado === 'En Camino'  && <button className="btn" style={{ background:'#2b8a3e' }} onClick={() => cambiarEstadoPedido(p.Id, 'Entregado')}>Marcar Entregado ✓</button>}
+                  {p.Estado === 'Preparado' && <button className="btn" onClick={() => cambiarEstadoPedido(p.Id, 'En Camino', usuario.Id)}>Tomar Ruta</button>}
+                  {p.Estado === 'En Camino' && <button className="btn" style={{ background:'#2b8a3e' }} onClick={() => cambiarEstadoPedido(p.Id, 'Entregado')}>Marcar Entregado ✓</button>}
                 </div>
               </div>
             </div>
@@ -222,9 +202,7 @@ export default function DashboardAdmin({ usuario }) {
     );
   }
 
-
-  // RENDER: ADMIN / ALMACENISTA
- 
+  // ── RENDER: ADMIN / ALMACENISTA ─────────────────────────────
   return (
     <div className="dashboard-layout">
 
@@ -236,6 +214,7 @@ export default function DashboardAdmin({ usuario }) {
           <li className={activeTab === 'proveedores'  ? 'active' : ''} onClick={() => setActiveTab('proveedores')}>🤝 Proveedores</li>
           <li className={activeTab === 'repartidores' ? 'active' : ''} onClick={() => setActiveTab('repartidores')}>🛵 Rutas y Choferes</li>
           <li className={activeTab === 'ventas'       ? 'active' : ''} onClick={() => setActiveTab('ventas')}>📊 Ventas</li>
+          {/* FIX: Solo el Admin ve la pestaña de Empleados */}
           {usuario.Rol === 'Administrador' && (
             <li className={activeTab === 'empleados' ? 'active' : ''} onClick={() => setActiveTab('empleados')}>👥 Empleados</li>
           )}
@@ -245,9 +224,7 @@ export default function DashboardAdmin({ usuario }) {
       {/* CONTENIDO */}
       <div className="dashboard-content">
 
-        {/* ══════════════════════════════════════
-            PESTAÑA: PEDIDOS (con filtros)
-        ══════════════════════════════════════ */}
+        {/* ══ PEDIDOS ══ */}
         {activeTab === 'pedidos' && (
           <div className="card">
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'16px', flexWrap:'wrap', gap:'10px' }}>
@@ -333,23 +310,17 @@ export default function DashboardAdmin({ usuario }) {
           </div>
         )}
 
-        {/* ══════════════════════════════════════
-            PESTAÑA: INVENTARIO (+ nueva categoría)
-        ══════════════════════════════════════ */}
+        {/* ══ INVENTARIO ══ */}
         {activeTab === 'inventario' && (
           <div className="card">
             <h3>🛠️ Gestión de Almacén</h3>
-
-            {/* Buscador */}
             <div style={{ margin:'16px 0' }}>
               <input type="text" placeholder="🔍 Buscar artículo..." value={busquedaArticulo}
                 onChange={e => setBusquedaArticulo(e.target.value)} style={{ ...inputStyle, width:'100%' }} />
             </div>
 
-            {/* Formulario artículo */}
             <form onSubmit={guardarArticulo} style={{ ...cardSeccion }}>
               <h4 style={{ marginBottom:'12px' }}>{editandoArticulo ? '✏️ Modificar Artículo' : '✨ Nuevo Artículo'}</h4>
-
               <div className="flex-row">
                 <input placeholder="Nombre del Producto" value={artForm.Nombre}
                   onChange={e => setArtForm({...artForm, Nombre:e.target.value})} required style={inputStyle} />
@@ -359,7 +330,6 @@ export default function DashboardAdmin({ usuario }) {
                   onChange={e => setArtForm({...artForm, Stock:e.target.value})} required style={inputStyle} />
               </div>
 
-              {/* Categoría + botón crear categoría */}
               <div style={{ display:'flex', gap:'10px', marginTop:'10px', alignItems:'flex-end', flexWrap:'wrap' }}>
                 <div style={{ flex:2, display:'flex', flexDirection:'column', gap:'4px' }}>
                   <label style={{ fontSize:'0.78rem', color:'var(--text-muted)', fontWeight:600 }}>Categoría</label>
@@ -377,7 +347,6 @@ export default function DashboardAdmin({ usuario }) {
                 </button>
               </div>
 
-              {/* Panel nueva categoría inline */}
               {mostrarNuevaCat && (
                 <div style={{ display:'flex', gap:'10px', marginTop:'10px', padding:'12px', background:'var(--bg-secondary)', borderRadius:'8px', border:'1px solid var(--border-color)', alignItems:'center' }}>
                   <input placeholder="Nombre de la nueva categoría" value={nuevaCatNombre}
@@ -416,7 +385,6 @@ export default function DashboardAdmin({ usuario }) {
               </div>
             </form>
 
-            {/* Grid artículos */}
             {articulosFiltrados.length === 0 ? (
               <p style={{ textAlign:'center', color:'var(--text-muted)', padding:'20px' }}>No se encontraron artículos.</p>
             ) : (
@@ -440,9 +408,7 @@ export default function DashboardAdmin({ usuario }) {
           </div>
         )}
 
-        {/* ══════════════════════════════════════
-            PESTAÑA: PROVEEDORES
-        ══════════════════════════════════════ */}
+        {/* ══ PROVEEDORES ══ */}
         {activeTab === 'proveedores' && (
           <div style={{ display:'flex', gap:'20px', flexWrap:'wrap' }}>
             <div className="card" style={{ flex:1, minWidth:'300px' }}>
@@ -494,9 +460,7 @@ export default function DashboardAdmin({ usuario }) {
           </div>
         )}
 
-        {/* ══════════════════════════════════════
-            PESTAÑA: REPARTIDORES
-        ══════════════════════════════════════ */}
+        {/* ══ REPARTIDORES ══ */}
         {activeTab === 'repartidores' && (
           <div className="card">
             <h3>🛵 Control de Repartidores y Rutas</h3>
@@ -528,9 +492,7 @@ export default function DashboardAdmin({ usuario }) {
           </div>
         )}
 
-        {/* ══════════════════════════════════════
-            PESTAÑA: VENTAS
-        ══════════════════════════════════════ */}
+        {/* ══ VENTAS ══ */}
         {activeTab === 'ventas' && (
           <div className="card">
             <h2>📊 Resumen de Ventas</h2>
@@ -561,9 +523,7 @@ export default function DashboardAdmin({ usuario }) {
           </div>
         )}
 
-        {/* ══════════════════════════════════════
-            PESTAÑA: EMPLEADOS (alta + edición)
-        ══════════════════════════════════════ */}
+        {/* ══ EMPLEADOS (solo Admin) ══ */}
         {activeTab === 'empleados' && usuario.Rol === 'Administrador' && (
           <div className="card">
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'18px', flexWrap:'wrap', gap:'10px' }}>
@@ -577,31 +537,28 @@ export default function DashboardAdmin({ usuario }) {
               </button>
             </div>
 
-            {/* Formulario alta / edición */}
             {mostrarFormEmp && (
               <form onSubmit={guardarEmpleado} style={{ ...cardSeccion, border:'1px solid var(--border-color)', marginBottom:'20px' }}>
                 <h4 style={{ marginBottom:'14px' }}>{editandoEmpleado ? '✏️ Editar Empleado' : '🆕 Nuevo Empleado'}</h4>
-
                 <div className="flex-row">
                   <div style={{ display:'flex', flexDirection:'column', gap:'4px', flex:1 }}>
                     <label style={{ fontSize:'0.78rem', color:'var(--text-muted)', fontWeight:600 }}>Nombre Completo *</label>
-                    <input placeholder="" value={empForm.NombreCompleto}
+                    <input value={empForm.NombreCompleto}
                       onChange={e => setEmpForm({...empForm, NombreCompleto:e.target.value})} required style={inputStyle} />
                   </div>
                   <div style={{ display:'flex', flexDirection:'column', gap:'4px', flex:1 }}>
                     <label style={{ fontSize:'0.78rem', color:'var(--text-muted)', fontWeight:600 }}>Usuario (login) *</label>
-                    <input placeholder="" value={empForm.Usuario}
+                    <input value={empForm.Usuario}
                       onChange={e => setEmpForm({...empForm, Usuario:e.target.value})}
                       required={!editandoEmpleado} style={inputStyle} />
                   </div>
                 </div>
-
                 <div className="flex-row" style={{ marginTop:'10px' }}>
                   <div style={{ display:'flex', flexDirection:'column', gap:'4px', flex:1 }}>
                     <label style={{ fontSize:'0.78rem', color:'var(--text-muted)', fontWeight:600 }}>
-                      {editandoEmpleado ? 'Nueva Contraseña (dejar vacío para no cambiar)' : 'Contraseña *'}
+                      {editandoEmpleado ? 'Nueva Contraseña (dejar vacío = sin cambio)' : 'Contraseña *'}
                     </label>
-                    <input type="password" placeholder="" value={empForm.Contrasena}
+                    <input type="password" value={empForm.Contrasena}
                       onChange={e => setEmpForm({...empForm, Contrasena:e.target.value})}
                       required={!editandoEmpleado} style={inputStyle} />
                   </div>
@@ -614,7 +571,6 @@ export default function DashboardAdmin({ usuario }) {
                     </select>
                   </div>
                 </div>
-
                 <div className="flex-row" style={{ marginTop:'10px' }}>
                   <div style={{ display:'flex', flexDirection:'column', gap:'4px', flex:1 }}>
                     <label style={{ fontSize:'0.78rem', color:'var(--text-muted)', fontWeight:600 }}>Teléfono</label>
@@ -623,11 +579,10 @@ export default function DashboardAdmin({ usuario }) {
                   </div>
                   <div style={{ display:'flex', flexDirection:'column', gap:'4px', flex:1 }}>
                     <label style={{ fontSize:'0.78rem', color:'var(--text-muted)', fontWeight:600 }}>Correo electrónico</label>
-                    <input type="email" placeholder="" value={empForm.Correo}
+                    <input type="email" value={empForm.Correo}
                       onChange={e => setEmpForm({...empForm, Correo:e.target.value})} style={inputStyle} />
                   </div>
                 </div>
-
                 <div className="flex-row" style={{ marginTop:'16px' }}>
                   <button type="submit" className="btn" style={{ maxWidth:'200px', background:'#2b8a3e' }}>
                     {editandoEmpleado ? '💾 Actualizar Empleado' : '✅ Registrar Empleado'}
@@ -640,14 +595,12 @@ export default function DashboardAdmin({ usuario }) {
               </form>
             )}
 
-            {/* Tabla de empleados */}
             {empleados.length === 0 ? (
               <p style={{ textAlign:'center', color:'var(--text-muted)', padding:'30px' }}>No hay empleados registrados.</p>
             ) : (
               <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
                 {empleados.map(emp => (
                   <div key={emp.Id} style={{ display:'flex', alignItems:'center', gap:'14px', padding:'14px 16px', borderRadius:'10px', border:'1px solid var(--border-color)', background:'var(--bg-primary)', flexWrap:'wrap' }}>
-                    {/* Avatar inicial */}
                     <div style={{ width:'44px', height:'44px', borderRadius:'50%', background:'var(--primary-color)', color:'white', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:'1.1rem', flexShrink:0 }}>
                       {(emp.NombreCompleto || '?')[0].toUpperCase()}
                     </div>
@@ -658,7 +611,7 @@ export default function DashboardAdmin({ usuario }) {
                       </div>
                       <p style={{ fontSize:'0.82rem', color:'var(--text-muted)', margin:'3px 0' }}>
                         👤 {emp.Usuario}
-                        {emp.Correo && <span> · ✉️ {emp.Correo}</span>}
+                        {emp.Correo   && <span> · ✉️ {emp.Correo}</span>}
                         {emp.Telefono && <span> · 📞 {emp.Telefono}</span>}
                       </p>
                     </div>

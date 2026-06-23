@@ -113,14 +113,25 @@ GO
 IF NOT EXISTS (SELECT * FROM Categorias)
 INSERT INTO Categorias (Nombre) VALUES ('Abarrotes'),('Bebidas'),('Lácteos'),('Botanas'),('Limpieza');
 
+-- REEMPLAZA los 3 inserts de usuarios en init.sql:
+
 IF NOT EXISTS (SELECT * FROM Usuarios WHERE Usuario='admin')
-INSERT INTO Usuarios (Usuario, Password, NombreCompleto, Rol) VALUES ('admin','admin123','Administrador General','Administrador');
+INSERT INTO Usuarios (Usuario, Password, NombreCompleto, Rol) VALUES 
+('admin',
+ '$2b$10$/JLvES9D2sFn2iDwe0MgEeXBCoiUBZqlmhd6gapDCkmrLWX9WVG1q',
+ 'Administrador General','Administrador');
 
 IF NOT EXISTS (SELECT * FROM Usuarios WHERE Usuario='almacen')
-INSERT INTO Usuarios (Usuario, Password, NombreCompleto, Rol) VALUES ('almacen','almacen123','Jefe de Almacén','Almacenista');
+INSERT INTO Usuarios (Usuario, Password, NombreCompleto, Rol) VALUES 
+('almacen',
+ '$2b$10$F.wIZcVOXdGQAaRfbTpp/u4A2GBL.ODjP1FJTJ2WKRqR5.7g.VyWG',
+ 'Jefe de Almacén','Almacenista');
 
 IF NOT EXISTS (SELECT * FROM Usuarios WHERE Usuario='repartidor1')
-INSERT INTO Usuarios (Usuario, Password, NombreCompleto, Rol) VALUES ('repartidor1','repartidor123','Carlos Mendoza (Repartidor)','Repartidor');
+INSERT INTO Usuarios (Usuario, Password, NombreCompleto, Rol) VALUES 
+('repartidor1',
+ '$2b$10$ns2/OuE8pxD.zsB3Tijqru8U69Y9IyFHDHYZOipPhOIuaT3Uev99i',
+ 'Carlos Mendoza (Repartidor)','Repartidor');
 
 IF NOT EXISTS (SELECT * FROM Proveedores)
 INSERT INTO Proveedores (Nombre, Contacto, Telefono) VALUES ('Distribuidora Central','Juan Pérez','555-1234'),('Bebidas del Valle','Ana Gómez','555-5678');
