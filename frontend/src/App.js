@@ -3,6 +3,7 @@ import axios from 'axios';
 import Tienda from './components/Tienda';
 import DashboardAdmin from './components/DashboardAdmin';
 import DashboardCliente from './components/DashboardCliente';
+import DashboardRepartidor from './components/DashboardRepartidor';
 import './index.css';
 
 export default function App() {
@@ -56,8 +57,12 @@ export default function App() {
         <div className="navbar-center">
           <button className={vista === 'tienda' ? 'active' : ''} onClick={() => setVista('tienda')}>Catálogo</button>
           
-          {usuario && usuario.Rol !== 'Cliente' && (
+          {usuario && (usuario.Rol === 'Administrador' || usuario.Rol === 'Empleado') && (
             <button className={vista === 'dashboard' ? 'active' : ''} onClick={() => setVista('dashboard')}>Panel de Empleado ({usuario.Rol})</button>
+          )}
+
+          {usuario && usuario.Rol === 'Repartidor' && (
+            <button className={vista === 'repartidor' ? 'active' : ''} onClick={() => setVista('repartidor')}>Mis Rutas</button>
           )}
           
           {usuario && usuario.Rol === 'Cliente' && (
@@ -80,8 +85,9 @@ export default function App() {
       </nav>
 
       {vista === 'tienda' && <Tienda usuario={usuario} setUsuario={setUsuario} openLogin={() => {setAuthModal(true); setIsRegister(false);}} />}
-      {vista === 'dashboard' && usuario && usuario.Rol !== 'Cliente' && <DashboardAdmin usuario={usuario} />}
+      {vista === 'dashboard' && usuario && (usuario.Rol === 'Administrador' || usuario.Rol === 'Empleado') && <DashboardAdmin usuario={usuario} />}
       {vista === 'perfil' && usuario && usuario.Rol === 'Cliente' && <DashboardCliente usuario={usuario} />}
+      {vista === 'repartidor' && usuario && usuario.Rol === 'Repartidor' && <DashboardRepartidor usuario={usuario} />}
 
       {authModal && (
         <div className="modal-overlay">

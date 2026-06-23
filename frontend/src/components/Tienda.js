@@ -375,7 +375,7 @@ const agregarAlCarrito = (prod) => {
         )}
       </div>
 
-      <div style={{flex: 1,minWidth: '280px',alignSelf: 'flex-start',border: '3px solid red',padding: '20px',background: 'white',
+      <div style={{flex: 1,minWidth: '280px',alignSelf: 'flex-start',border: '3px solid red',padding: '20px',background: 'var(--bg-secondary)', color: 'var(--text-main)',
       overflow: 'visible',maxHeight: 'none',height: 'auto'}}>
         <h3>🛒 Carrito</h3>
         <p>Items: {carrito.length}</p>
@@ -383,7 +383,7 @@ const agregarAlCarrito = (prod) => {
         <div style={{
   border: '2px solid red',
   padding: '10px',
-  background: '#fff'
+  background: 'var(--bg-primary)'
 }}>
   <h4>DEBUG CARRITO</h4>
 

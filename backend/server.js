@@ -211,6 +211,16 @@ app.get('/api/pedidos/cliente/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+app.get('/api/pedidos/repartidor/:id', async (req, res) => {
+  try {
+    const pool = await poolPromise;
+    const result = await pool.request()
+      .input('RepartidorId', sql.Int, req.params.id)
+      .query("SELECT p.*, u.NombreCompleto AS Cliente, u.Telefono AS TelefonoCliente FROM Pedidos p JOIN Usuarios u ON p.ClienteId = u.Id WHERE p.RepartidorId = @RepartidorId AND p.Estado != 'Entregado' ORDER BY p.Fecha ASC");
+    res.json(result.recordset);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.post('/api/pedidos', async (req, res) => {
   const { ClienteId, HorarioEntrega, Calle, Numero, Colonia, Municipio, CodigoPostal, Subtotal, IVA, Total, detalle } = req.body;
   try {
