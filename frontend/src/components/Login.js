@@ -11,8 +11,13 @@ export default function Login() {
       const res = await axios.post('http://localhost:3001/api/login', form);
       localStorage.setItem('usuario', JSON.stringify(res.data));
       window.location.reload();
-    } catch {
-      setError('Usuario o contraseña incorrectos');
+    } catch (err) {
+      
+      if (err.response && err.response.data && err.response.data.error) {
+        setError(err.response.data.error);
+      } else {
+        setError('Error de conexión con el servidor. Revisa si el backend está corriendo.');
+      }
     }
   };
 
@@ -20,7 +25,9 @@ export default function Login() {
     <div style={{ display:'flex', justifyContent:'center', alignItems:'center', minHeight:'100vh' }}>
       <form onSubmit={handleSubmit} style={{ background:'white', padding:'2rem', borderRadius:'12px', width:'320px', boxShadow:'0 4px 20px rgba(0,0,0,.1)' }}>
         <h2 style={{ textAlign:'center', color:'#2d6a4f', marginBottom:'1.5rem' }}>🛒 Tienda Abarrotes</h2>
-        {error && <p style={{ color:'red', marginBottom:'1rem' }}>{error}</p>}
+        
+        {error && <p style={{ color:'red', marginBottom:'1rem', textAlign:'center', fontWeight: 'bold' }}>{error}</p>}
+        
         <input placeholder="Usuario" value={form.Usuario} onChange={e => setForm({...form, Usuario: e.target.value})}
           style={{ width:'100%', padding:'.6rem', marginBottom:'.75rem', border:'1px solid #ccc', borderRadius:'6px' }} required />
         <input type="password" placeholder="Contraseña" value={form.Password} onChange={e => setForm({...form, Password: e.target.value})}

@@ -26,6 +26,9 @@ const poolPromise = new sql.ConnectionPool(config)
     console.log('Pool conectado a TiendaAbarrotes ✅');
     return pool;
   })
-  .catch(err => console.error('Error pool:', err.message));
+  .catch(err => {
+    console.error('Error pool:', err.message);
+    throw err; // Es crítico propagar el error para no tener promesas indefinidas
+  });
 
 module.exports = { sql, poolPromise };

@@ -1,108 +1,136 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-export default function Ventas() {
-  const [ventas,    setVentas]    = useState([]);
+export default function Ventas({ usuarioId }) {
   const [articulos, setArticulos] = useState([]);
-  const [carrito,   setCarrito]   = useState([]);
-  const [selId,     setSelId]     = useState('');
-  const [cantidad,  setCantidad]  = useState(1);
-  const [msg,       setMsg]       = useState('');
-  const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+  const [clientes, setClientes] = useState([]);
+  const [carrito, setCarrito] = useState([]);
+  const [clienteId, setClienteId] = useState('');
 
   useEffect(() => {
-    axios.get('http://localhost:3001/api/ventas').then(r => setVentas(r.data));
-    axios.get('http://localhost:3001/api/articulos').then(r => setArticulos(r.data));
+    cargarDatos();
   }, []);
 
-  const agregarCarrito = () => {
-    const art = articulos.find(a => a.Id === Number(selId));
-    if (!art) return;
-    const exist = carrito.find(c => c.Id === art.Id);
-    if (exist) setCarrito(carrito.map(c => c.Id === art.Id ? { ...c, Cantidad: c.Cantidad + Number(cantidad) } : c));
-    else       setCarrito([...carrito, { ...art, Cantidad: Number(cantidad) }]);
-    setSelId(''); setCantidad(1);
+  const cargarDatos = () => {
+    axios.get('http://localhost:3001/api/articulos').then(res => setArticulos(res.data));
+    axios.get('http://localhost:3001/api/clientes').then(res => setClientes(res.data));
   };
 
-  const subtotal = carrito.reduce((s, c) => s + c.Precio * c.Cantidad, 0);
-  const iva      = subtotal * 0.16;
-  const total    = subtotal + iva;
+  const agregarAlCarrito = (producto) => {
+    if (producto.Stock <= 0) return alert('No hay stock disponible para este producto.');
+    
+    const itemExistente = carrito.find(item => item.ProductoId === producto.Id);
+    
+    if (itemExistente) {
+      if (itemExistente.Cantidad >= producto.Stock) return alert('No puedes exceder el stock disponible.');
+      setCarrito(carrito.map(item => 
+        item.ProductoId === producto.Id 
+          ? { ...item, Cantidad: item.Cantidad + 1, Subtotal: (item.Cantidad + 1) * item.PrecioUnitario } 
+          : item
+      ));
+    } else {
+      setCarrito([...carrito, { 
+        ProductoId: producto.Id, 
+        Nombre: producto.Nombre, 
+        Cantidad: 1, 
+        PrecioUnitario: producto.Precio, 
+        Subtotal: producto.Precio 
+      }]);
+    }
+  };
+
+  const quitarDelCarrito = (id) => {
+    setCarrito(carrito.filter(item => item.ProductoId !== id));
+  };
 
   const registrarVenta = async () => {
-    if (!carrito.length) return;
-    await axios.post('http://localhost:3001/api/ventas', {
-      UsuarioId: usuario.Id,
-      Subtotal:  subtotal.toFixed(2),
-      IVA:       iva.toFixed(2),
-      Total:     total.toFixed(2),
-      detalle:   carrito.map(c => ({ ProductoId: c.Id, Cantidad: c.Cantidad, PrecioUnitario: c.Precio, Subtotal: (c.Precio * c.Cantidad).toFixed(2) }))
-    });
-    setCarrito([]);
-    setMsg('✅ Venta registrada');
-    axios.get('http://localhost:3001/api/ventas').then(r => setVentas(r.data));
-    setTimeout(() => setMsg(''), 3000);
+    if (carrito.length === 0) return alert('Añade al menos un producto al carrito.');
+    
+    const Subtotal = carrito.reduce((acc, item) => acc + item.Subtotal, 0);
+    const IVA = Subtotal * 0.16; // Calculando el 16% de IVA
+    const Total = Subtotal + IVA;
+
+    try {
+      await axios.post('http://localhost:3001/api/ventas', {
+        ClienteId: clienteId || null,
+        UsuarioId: usuarioId,
+        Subtotal,
+        IVA,
+        Total,
+        detalle: carrito
+      });
+      alert('✅ Venta registrada exitosamente');
+      setCarrito([]);
+      setClienteId('');
+      cargarDatos(); // Actualiza el stock visualmente
+    } catch (error) {
+      alert('Error al registrar la venta. Revisa la consola.');
+    }
   };
 
   return (
-    <div>
-      <h2 className="section-title">Registro de Ventas</h2>
-      {msg && <p className="msg">{msg}</p>}
+    <div className="card">
+      <div className="flex-row">
+        
+        {/* Lado izquierdo: Lista de productos */}
+        <div style={{ flex: 2 }}>
+          <h2>🏷️ Productos Disponibles</h2>
+          <div className="grid">
+            {articulos.map(a => (
+              <div key={a.Id} className="item-card">
+                <h4 style={{ fontSize: '1.1rem' }}>{a.Nombre}</h4>
+                <p><strong>${a.Precio}</strong></p>
+                <p style={{ color: a.Stock > 0 ? 'green' : 'red' }}>Stock: {a.Stock}</p>
+                <button 
+                  className="btn" 
+                  style={{ marginTop: '10px' }} 
+                  onClick={() => agregarAlCarrito(a)} 
+                  disabled={a.Stock === 0}
+                >
+                  {a.Stock === 0 ? "Agotado" : "Agregar"}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
 
-      <div className="form-card">
-        <h3>Nueva Venta</h3>
-        <div className="form-grid">
-          <select value={selId} onChange={e => setSelId(e.target.value)}>
-            <option value="">-- Selecciona artículo --</option>
-            {articulos.map(a => <option key={a.Id} value={a.Id}>{a.Nombre} — ${Number(a.Precio).toFixed(2)}</option>)}
+        {/* Lado derecho: Carrito de Compras */}
+        <div style={{ flex: 1, background: '#e9ecef', padding: '20px', borderRadius: '8px' }}>
+          <h2>🧾 Detalle de Venta</h2>
+          
+          <select value={clienteId} onChange={e => setClienteId(e.target.value)} style={{ margin: '15px 0' }}>
+            <option value="">Cliente: Público General</option>
+            {clientes.map(c => <option key={c.Id} value={c.Id}>{c.Nombre}</option>)}
           </select>
-          <input type="number" min="1" value={cantidad} onChange={e => setCantidad(e.target.value)} placeholder="Cantidad" />
-        </div>
-        <div className="form-actions">
-          <button className="btn-primary" onClick={agregarCarrito}>+ Agregar al carrito</button>
+
+          <div style={{ minHeight: '150px', borderBottom: '2px solid #ccc', marginBottom: '15px' }}>
+            {carrito.length === 0 ? <p style={{ color: 'gray' }}>El carrito está vacío...</p> : null}
+            
+            {carrito.map(c => (
+              <div key={c.ProductoId} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', background: 'white', padding: '8px', borderRadius: '4px' }}>
+                <span><strong>{c.Cantidad}x</strong> {c.Nombre}</span>
+                <span>
+                  ${c.Subtotal.toFixed(2)} 
+                  <button onClick={() => quitarDelCarrito(c.ProductoId)} className="btn-danger" style={{ padding: '2px 8px', marginLeft: '10px', width: 'auto' }}>X</button>
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ textAlign: 'right', fontSize: '1.1rem' }}>
+            <p>Subtotal: <strong>${carrito.reduce((acc, item) => acc + item.Subtotal, 0).toFixed(2)}</strong></p>
+            <p>IVA (16%): <strong>${(carrito.reduce((acc, item) => acc + item.Subtotal, 0) * 0.16).toFixed(2)}</strong></p>
+            <h2 style={{ color: '#2d6a4f', marginTop: '10px' }}>
+              Total: ${(carrito.reduce((acc, item) => acc + item.Subtotal, 0) * 1.16).toFixed(2)}
+            </h2>
+          </div>
+
+          <button className="btn" style={{ marginTop: '20px', width: '100%', fontSize: '1.1rem', padding: '15px' }} onClick={registrarVenta}>
+            💰 Cobrar Venta
+          </button>
         </div>
 
-        {carrito.length > 0 && (
-          <>
-            <table className="tabla" style={{ marginTop:'1rem' }}>
-              <thead><tr><th>Artículo</th><th>Cant.</th><th>Precio</th><th>Subtotal</th><th></th></tr></thead>
-              <tbody>
-                {carrito.map(c => (
-                  <tr key={c.Id}>
-                    <td>{c.Nombre}</td>
-                    <td>{c.Cantidad}</td>
-                    <td>${Number(c.Precio).toFixed(2)}</td>
-                    <td>${(c.Precio * c.Cantidad).toFixed(2)}</td>
-                    <td><button className="btn-delete" onClick={() => setCarrito(carrito.filter(x => x.Id !== c.Id))}>🗑️</button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <div style={{ textAlign:'right', marginTop:'.75rem', lineHeight:'1.8' }}>
-              <p>Subtotal: <strong>${subtotal.toFixed(2)}</strong></p>
-              <p>IVA (16%): <strong>${iva.toFixed(2)}</strong></p>
-              <p style={{ fontSize:'1.1rem' }}>Total: <strong>${total.toFixed(2)}</strong></p>
-              <button className="btn-primary" style={{ marginTop:'.75rem' }} onClick={registrarVenta}>Registrar Venta ✅</button>
-            </div>
-          </>
-        )}
       </div>
-
-      <h3 style={{ margin:'1rem 0 .5rem', color:'#2d6a4f' }}>Historial de Ventas</h3>
-      <table className="tabla">
-        <thead><tr><th>ID</th><th>Vendedor</th><th>Subtotal</th><th>IVA</th><th>Total</th><th>Fecha</th></tr></thead>
-        <tbody>
-          {ventas.map(v => (
-            <tr key={v.Id}>
-              <td>{v.Id}</td>
-              <td>{v.Vendedor}</td>
-              <td>${Number(v.Subtotal).toFixed(2)}</td>
-              <td>${Number(v.IVA).toFixed(2)}</td>
-              <td><strong>${Number(v.Total).toFixed(2)}</strong></td>
-              <td>{new Date(v.Fecha).toLocaleString('es-MX')}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
 }
